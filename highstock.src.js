@@ -1,5 +1,5 @@
 /**
- * @license Highstock JS v5.0.7-modified (2017-02-07)
+ * @license Highstock JS v5.0.7-modified (2017-02-14)
  *
  * (c) 2009-2016 Torstein Honsi
  *
@@ -8600,6 +8600,7 @@
                     month: '%b \'%y',
                     year: '%Y'
                 },
+                endOfMonth: false,
                 endOnTick: false,
                 // reversed: false,
 
@@ -11215,6 +11216,7 @@
                 i,
                 higherRanks = {},
                 useUTC = defaultOptions.global.useUTC,
+                endOfMonth = this.options.endOfMonth,
                 minYear, // used in months and years as a basis for Date.UTC()
                 minDate = new Date(min - getTZOffset(min)),
                 makeTime = Date.hcMakeTime,
@@ -11308,7 +11310,26 @@
 
                         // if the interval is months, use Date.UTC to increase months
                     } else if (interval === timeUnits.month) {
-                        time = makeTime(minYear, minMonth + i * count);
+                        var curMonth = minMonth + i * count;
+                        // var curDay = 1;
+                        // if (endOfMonth) {
+                        //  switch (curMonth % 12) {
+                        //  case 0:
+                        //  case 2:
+                        //  case 4:
+                        //  case 6:
+                        //  case 7:
+                        //  case 9:
+                        //  case 11:
+                        //      curDay = 31; break;
+                        //  case 1: 
+                        //      curDay = 28; break;
+                        //  default:
+                        //      curDay = 30;
+                        //  }
+                        // }
+                        var curDay = endOfMonth ? 0 : 1;
+                        time = makeTime(minYear, curMonth, curDay);
 
                         // if we're using global time, the interval is not fixed as it jumps
                         // one hour at the DST crossover
@@ -28175,7 +28196,7 @@
                     newMin = Math.max(newMax - range, dataMin);
                     newMax = Math.min(newMin + range, dataMax);
 
-                } else if (type === 'ytd') {
+                } else if (type === 'ytd' || type === 'financial_ytd') {
 
                     // On user clicks on the buttons, or a delayed action running from the beforeRender
                     // event (below), the baseAxis is defined.
@@ -28194,7 +28215,7 @@
                             });
                             redraw = false;
                         }
-                        ytdExtremes = rangeSelector.getYTDExtremes(dataMax, dataMin, useUTC);
+                        ytdExtremes = rangeSelector.getYTDExtremes(dataMax, dataMin, useUTC, type === 'financial_ytd');
                         newMin = rangeMin = ytdExtremes.min;
                         newMax = ytdExtremes.max;
 
@@ -28337,7 +28358,7 @@
                     unionExtremes = (chart.scroller && chart.scroller.getUnionExtremes()) || baseAxis,
                     dataMin = unionExtremes.dataMin,
                     dataMax = unionExtremes.dataMax,
-                    ytdExtremes = rangeSelector.getYTDExtremes(dataMax, dataMin, useUTC),
+                    ytdExtremes = rangeSelector.getYTDExtremes(dataMax, dataMin, useUTC, false),
                     ytdMin = ytdExtremes.min,
                     ytdMax = ytdExtremes.max,
                     selected = rangeSelector.selected,
@@ -28661,11 +28682,20 @@
              * @param  {number} dataMin
              * @return {object} Returns min and max for the YTD
              */
-            getYTDExtremes: function(dataMax, dataMin, useUTC) {
+            getYTDExtremes: function(dataMax, dataMin, useUTC, financial) {
                 var min,
                     now = new HCDate(dataMax),
                     year = now[HCDate.hcGetFullYear](),
-                    startOfYear = useUTC ? HCDate.UTC(year - 1, 11, 31) : +new HCDate(year - 1, 11, 31); // eslint-disable-line new-cap
+                    startOfYear;
+
+                /* eslint-disable new-cap */
+                if (financial) {
+                    startOfYear = useUTC ? HCDate.UTC(year - 1, 11, 31) : +new HCDate(year - 1, 11, 31);
+                } else {
+                    startOfYear = useUTC ? HCDate.UTC(year, 0, 1) : +new HCDate(year, 0, 1);
+                }
+                /* eslint-enable new-cap */
+
                 min = Math.max(dataMin || 0, startOfYear);
                 now = now.getTime();
                 return {
