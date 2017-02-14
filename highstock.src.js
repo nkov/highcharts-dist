@@ -11310,26 +11310,8 @@
 
                         // if the interval is months, use Date.UTC to increase months
                     } else if (interval === timeUnits.month) {
-                        var curMonth = minMonth + i * count;
-                        // var curDay = 1;
-                        // if (endOfMonth) {
-                        //  switch (curMonth % 12) {
-                        //  case 0:
-                        //  case 2:
-                        //  case 4:
-                        //  case 6:
-                        //  case 7:
-                        //  case 9:
-                        //  case 11:
-                        //      curDay = 31; break;
-                        //  case 1: 
-                        //      curDay = 28; break;
-                        //  default:
-                        //      curDay = 30;
-                        //  }
-                        // }
-                        var curDay = endOfMonth ? 0 : 1;
-                        time = makeTime(minYear, curMonth, curDay);
+                        var minDay = endOfMonth ? 0 : 1;
+                        time = makeTime(minYear, minMonth + i * count, minDay);
 
                         // if we're using global time, the interval is not fixed as it jumps
                         // one hour at the DST crossover
@@ -28683,18 +28665,19 @@
              * @return {object} Returns min and max for the YTD
              */
             getYTDExtremes: function(dataMax, dataMin, useUTC, financial) {
-                var min,
+                var rangeSelector = this,
+                    data = rangeSelector.chart.series[0].xData,
+                    min,
                     now = new HCDate(dataMax),
                     year = now[HCDate.hcGetFullYear](),
-                    startOfYear;
+                    startOfYear = useUTC ? HCDate.UTC(year, 0, 1) : +new HCDate(year, 0, 1); // eslint-disable-line new-cap
 
-                /* eslint-disable new-cap */
                 if (financial) {
-                    startOfYear = useUTC ? HCDate.UTC(year - 1, 11, 31) : +new HCDate(year - 1, 11, 31);
-                } else {
-                    startOfYear = useUTC ? HCDate.UTC(year, 0, 1) : +new HCDate(year, 0, 1);
+                    data = data.filter(function(d) {
+                        return d < startOfYear;
+                    });
+                    startOfYear = data[data.length - 1];
                 }
-                /* eslint-enable new-cap */
 
                 min = Math.max(dataMin || 0, startOfYear);
                 now = now.getTime();
