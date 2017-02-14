@@ -26221,7 +26221,7 @@
                 var min,
                     now = new HCDate(dataMax),
                     year = now[HCDate.hcGetFullYear](),
-                    startOfYear = useUTC ? HCDate.UTC(year, 0, 1) : +new HCDate(year, 0, 1); // eslint-disable-line new-cap
+                    startOfYear = useUTC ? HCDate.UTC(year - 1, 11, 31) : +new HCDate(year - 1, 11, 31); // eslint-disable-line new-cap
                 min = Math.max(dataMin || 0, startOfYear);
                 now = now.getTime();
                 return {
